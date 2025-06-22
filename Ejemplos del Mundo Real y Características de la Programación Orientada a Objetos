@@ -1,0 +1,52 @@
+# Ejemplo de Programación Orientada a Objetos: Sistema de Reservas de Hotel
+
+class Habitacion:
+    def __init__(self, numero, tipo, precio):
+        self.numero = numero
+        self.tipo = tipo
+        self.precio = precio
+        self.ocupada = False
+
+    def reservar(self):
+        if not self.ocupada:
+            self.ocupada = True
+            return f"Habitación {self.numero} ha sido reservada."
+        else:
+            return f"Habitación {self.numero} ya está ocupada."
+
+    def liberar(self):
+        if self.ocupada:
+            self.ocupada = False
+            return f"Habitación {self.numero} ha sido liberada."
+        else:
+            return f"Habitación {self.numero} ya está libre."
+
+class Hotel:
+    def __init__(self, nombre):
+        self.nombre = nombre
+        self.habitaciones = []
+
+    def agregar_habitacion(self, habitacion):
+        self.habitaciones.append(habitacion)
+
+    def mostrar_disponibilidad(self):
+        disponibles = [h for h in self.habitaciones if not h.ocupada]
+        return f"Habitaciones disponibles: {[h.numero for h in disponibles]}"
+
+    def reservar_habitacion(self, numero):
+        for h in self.habitaciones:
+            if h.numero == numero:
+                return h.reservar()
+        return "Habitación no encontrada."
+
+# Uso del sistema
+hotel = Hotel("Hotel Amazonico")
+hotel.agregar_habitacion(Habitacion(101, "Simple", 30))
+hotel.agregar_habitacion(Habitacion(102, "Doble", 50))
+hotel.agregar_habitacion(Habitacion(103, "Suite", 80))
+
+print(hotel.mostrar_disponibilidad())
+print(hotel.reservar_habitacion(102))
+print(hotel.mostrar_disponibilidad())
+print(hotel.reservar_habitacion(102))
+print(hotel.reservar_habitacion(105))
