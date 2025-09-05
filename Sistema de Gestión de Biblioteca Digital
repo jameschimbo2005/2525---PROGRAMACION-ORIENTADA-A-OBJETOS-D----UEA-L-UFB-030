@@ -1,0 +1,200 @@
+# -*- coding: utf-8 -*-
+"""
+Sistema de Gestión de Biblioteca Digital
+Archivo: biblioteca_digital.py
+Descripción: Implementación en Python de un sistema de gestión de biblioteca digital
+             usando POO y colecciones (tuplas, listas, diccionarios y conjuntos).
+Autor: [Tu Nombre]
+Fecha: 2025-09-05
+"""
+
+class Libro:
+    """Clase que representa un libro.
+    Atributos inmutables (título y autor) se almacenan como tupla.
+    """
+    def __init__(self, titulo: str, autor: str, categoria: str, isbn: str):
+        # Tupla inmutable (titulo, autor)
+        self.info = (titulo, autor)
+        self.categoria = categoria
+        self.isbn = isbn
+        self.prestado = False
+
+    def __str__(self):
+        estado = "Prestado" if self.prestado else "Disponible"
+        return f"[{self.isbn}] {self.info[0]} - {self.info[1]} ({self.categoria}) -> {estado}"
+
+
+class Usuario:
+    """Clase que representa un usuario de la biblioteca."""
+    def __init__(self, nombre: str, user_id: str):
+        self.nombre = nombre
+        self.user_id = user_id
+        # Lista de objetos Libro prestados a este usuario
+        self.libros_prestados = []
+
+    def __str__(self):
+        return f"Usuario: {self.nombre} (ID: {self.user_id})"
+
+
+class Biblioteca:
+    """Clase que gestiona la colección de libros, usuarios y operaciones.
+
+    - libros: diccionario {isbn: Libro} para búsquedas eficientes por ISBN
+    - usuarios: diccionario {user_id: Usuario}
+    - user_ids: conjunto para garantizar unicidad de IDs de usuario
+    """
+    def __init__(self):
+        self.libros = {}
+        self.usuarios = {}
+        self.user_ids = set()
+
+    # ------------------------------
+    # Gestión de libros
+    # ------------------------------
+    def añadir_libro(self, libro: Libro) -> bool:
+        """Añade un libro si su ISBN no existe. Devuelve True si se añadió."""
+        if libro.isbn in self.libros:
+            return False
+        self.libros[libro.isbn] = libro
+        return True
+
+    def quitar_libro(self, isbn: str) -> bool:
+        """Elimina un libro por ISBN si existe y no está prestado."""
+        if isbn not in self.libros:
+            return False
+        if self.libros[isbn].prestado:
+            return False
+        del self.libros[isbn]
+        return True
+
+    # ------------------------------
+    # Gestión de usuarios
+    # ------------------------------
+    def registrar_usuario(self, usuario: Usuario) -> bool:
+        """Registra un usuario si el ID no está en uso."""
+        if usuario.user_id in self.user_ids:
+            return False
+        self.usuarios[usuario.user_id] = usuario
+        self.user_ids.add(usuario.user_id)
+        return True
+
+    def baja_usuario(self, user_id: str) -> bool:
+        """Da de baja a un usuario si existe y no tiene libros prestados."""
+        if user_id not in self.usuarios:
+            return False
+        if self.usuarios[user_id].libros_prestados:
+            return False
+        # eliminar
+        del self.usuarios[user_id]
+        self.user_ids.remove(user_id)
+        return True
+
+    # ------------------------------
+    # Préstamos
+    # ------------------------------
+    def prestar_libro(self, user_id: str, isbn: str) -> bool:
+        """Presta un libro a un usuario. Devuelve True si el préstamo fue exitoso."""
+        if user_id not in self.usuarios:
+            return False
+        if isbn not in self.libros:
+            return False
+        usuario = self.usuarios[user_id]
+        libro = self.libros[isbn]
+        if libro.prestado:
+            return False
+        libro.prestado = True
+        usuario.libros_prestados.append(libro)
+        return True
+
+    def devolver_libro(self, user_id: str, isbn: str) -> bool:
+        """Devuelve un libro prestado por un usuario. Devuelve True si fue exitoso."""
+        if user_id not in self.usuarios:
+            return False
+        if isbn not in self.libros:
+            return False
+        usuario = self.usuarios[user_id]
+        libro = self.libros[isbn]
+        if libro not in usuario.libros_prestados:
+            return False
+        libro.prestado = False
+        usuario.libros_prestados.remove(libro)
+        return True
+
+    # ------------------------------
+    # Búsquedas
+    # ------------------------------
+    def buscar_por_titulo(self, titulo: str):
+        """Devuelve lista de libros cuyo título coincide (case-insensitive)."""
+        return [libro for libro in self.libros.values() if libro.info[0].lower() == titulo.lower()]
+
+    def buscar_por_autor(self, autor: str):
+        """Devuelve lista de libros cuyo autor coincide (case-insensitive)."""
+        return [libro for libro in self.libros.values() if libro.info[1].lower() == autor.lower()]
+
+    def buscar_por_categoria(self, categoria: str):
+        """Devuelve lista de libros de una categoría (case-insensitive)."""
+        return [libro for libro in self.libros.values() if libro.categoria.lower() == categoria.lower()]
+
+    # ------------------------------
+    # Listados
+    # ------------------------------
+    def listar_libros_prestados(self, user_id: str):
+        """Devuelve la lista de libros prestados a un usuario; vacía si usuario no existe."""
+        if user_id not in self.usuarios:
+            return []
+        return list(self.usuarios[user_id].libros_prestados)
+
+    def listar_todos_libros(self):
+        """Devuelve lista con todos los libros de la biblioteca."""
+        return list(self.libros.values())
+
+
+# ==============================
+# Bloque de pruebas (ejecución principal)
+# ==============================
+if __name__ == "__main__":
+    # Crear instancia de Biblioteca
+    mi_biblioteca = Biblioteca()
+
+    # Crear algunos libros
+    libro1 = Libro("Cien años de soledad", "Gabriel García Márquez", "Novela", "ISBN001")
+    libro2 = Libro("El Principito", "Antoine de Saint-Exupéry", "Infantil", "ISBN002")
+    libro3 = Libro("Don Quijote de la Mancha", "Miguel de Cervantes", "Clásico", "ISBN003")
+
+    # Añadir libros a la biblioteca
+    assert mi_biblioteca.añadir_libro(libro1) == True
+    assert mi_biblioteca.añadir_libro(libro2) == True
+    assert mi_biblioteca.añadir_libro(libro3) == True
+
+    # Registrar usuarios
+    usuario1 = Usuario("Juan Pérez", "U001")
+    usuario2 = Usuario("María Gómez", "U002")
+    assert mi_biblioteca.registrar_usuario(usuario1) == True
+    assert mi_biblioteca.registrar_usuario(usuario2) == True
+
+    # Prestar libros
+    assert mi_biblioteca.prestar_libro("U001", "ISBN001") == True
+    assert mi_biblioteca.prestar_libro("U002", "ISBN002") == True
+    # Intento prestar libro ya prestado
+    assert mi_biblioteca.prestar_libro("U001", "ISBN001") == False
+
+    # Listar libros prestados a U001
+    print('\n Libros prestados a Juan:')
+    for l in mi_biblioteca.listar_libros_prestados("U001"):
+        print(l)
+
+    # Devolver libro
+    assert mi_biblioteca.devolver_libro("U001", "ISBN001") == True
+
+    # Buscar por autor
+    encontrados = mi_biblioteca.buscar_por_autor("Miguel de Cervantes")
+    print('\n Búsqueda por autor "Miguel de Cervantes":')
+    for l in encontrados:
+        print(l)
+
+    # Listar todos los libros
+    print('\n Todos los libros en la biblioteca:')
+    for l in mi_biblioteca.listar_todos_libros():
+        print(l)
+
+    print('\nPruebas completadas correctamente.')
